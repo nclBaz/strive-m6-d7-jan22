@@ -1,4 +1,5 @@
 import express from "express"
+import createError from "http-errors"
 import UsersModel from "./model.js"
 
 const usersRouter = express.Router()
@@ -25,6 +26,13 @@ usersRouter.get("/", async (req, res, next) => {
 
 usersRouter.get("/:userId", async (req, res, next) => {
   try {
+    const user = await UsersModel.findById(req.params.userId)
+
+    if (user) {
+      res.send(user)
+    } else {
+      next(createError(404, `User with id ${req.params.userId} not found!`))
+    }
   } catch (error) {
     next(error)
   }
@@ -32,6 +40,26 @@ usersRouter.get("/:userId", async (req, res, next) => {
 
 usersRouter.put("/:userId", async (req, res, next) => {
   try {
+    const updatedUser = await UsersModel.findByIdAndUpdate(
+      req.params.userId, // WHO
+      req.body, // HOW
+      { new: true, runValidators: true } // OPTIONS. By default findByIdAndUpdate returns the record pre-modification. If you want to get back the newly updated record you should use the option: new true
+      // by default validation is off here, if you want to have it --> runValidators: true
+    )
+
+    // ********************************* ALTERNATIVE METHOD ***************************************
+
+    // const user = await UsersModel.findById(req.params.userId)
+
+    // user.firstName = "John"
+
+    // await user.save()
+
+    if (updatedUser) {
+      res.send(updatedUser)
+    } else {
+      next(createError(404, `User with id ${req.params.userId} not found!`))
+    }
   } catch (error) {
     next(error)
   }
@@ -39,6 +67,12 @@ usersRouter.put("/:userId", async (req, res, next) => {
 
 usersRouter.delete("/:userId", async (req, res, next) => {
   try {
+    const deletedUser = await UsersModel.findByIdAndDelete(req.params.userId)
+    if (deletedUser) {
+      res.status(204).send()
+    } else {
+      next(createError(404, `User with id ${req.params.userId} not found!`))
+    }
   } catch (error) {
     next(error)
   }
